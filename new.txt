@@ -91,7 +91,15 @@ let msg = document.getElementById("msg");
 msg.style.color = "red"; 
 msg.innerText = "Registration successful"; 
 document.getElementById("form").reset(); 
-}); 
+});
+
+
+
+
+
+
+
+
 2. Create login/signup with express/flask mongodb. 
 FOLDER STRUCTURE:- 
 flask-signup/ 
@@ -227,6 +235,12 @@ Login.html:-
 <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p> 
 </body> 
 </html> 
+
+
+
+
+
+
 3.Write a express code for AJAX&JSON. 
 Server.js:- 
 const express = require("express"); 
@@ -303,6 +317,13 @@ Index.html:-
 <script src="script.js"></script> 
 </body> 
 </html> 
+
+
+
+
+
+
+
 4. Write a program to Train and save ML model Naive Bayes. 
 FOLDER STRUCTURE:- 
 Train naivebayes/ 
@@ -374,3 +395,135 @@ index.html:-
 {% endif %} 
 </body> 
 </html> 
+
+
+
+
+
+
+
+Program
+9.File Handling in Full Stack Apps using multer
+
+Multer is a middleware for Node.js
++ Express used to handle multipart/form-data (used for file uploads).
+
+1️.Backend (Node.js + Express + Multer)
+
+📁 Folder Structure
+
+project/
+│-- uploads/
+│-- server.js
+│-- package.json
+
+ 
+
+Step
+1: Install Dependencies
+
+npm init -y
+npm install express multer cors
+
+ 
+
+Step
+2: server.js
+
+const express = require("express");
+const multer = require("multer");
+const cors = require("cors");
+const path = require("path");
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// ------------------
+// Multer Storage Config
+// ------------------
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/");   // folder to store files
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() +
+path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage: storage });
+
+// ------------------
+// Upload Route
+// ------------------
+app.post("/upload", upload.single("image"), (req, res)
+=> {
+  res.json({
+    message: "File uploaded
+successfully!",
+    file: req.file,
+  });
+});
+
+// Serve uploaded images
+app.use("/uploads", express.static("uploads"));
+
+app.listen(5000, () => {
+  console.log("Server running on
+http://localhost:5000");
+});
+
+ 2️.Frontend (React)
+
+Create
+React App
+
+npx create-react-app frontend
+cd frontend
+npm start
+
+ 
+
+App.js
+
+import React, { useState } from "react";
+
+function App() {
+  const [file, setFile] = useState(null);
+
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+  };
+
+  const handleUpload = async () => {
+    const formData = new FormData();
+    formData.append("image",
+file);
+
+    const response = await
+fetch("http://localhost:5000/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+    console.log(data);
+    alert("File Uploaded!");
+  };
+
+  return (
+    <div style={{ padding:
+"20px" }}>
+      <h2>Upload Image</h2>
+      <input type="file"
+onChange={handleFileChange} />
+      <button
+onClick={handleUpload}>Upload</button>
+    </div>
+  );
+}
+
+export default App;
+
+
