@@ -1,0 +1,376 @@
+1.Design a responsive registration form using html,css,js. 
+INDEX.HTML:- 
+<!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+<meta charset="UTF-8"> 
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+<title>Simple Registration Form</title> 
+<link rel="stylesheet" href="style.css"> 
+</head> 
+<body> 
+<div class="box"> 
+<h2>Registration Form</h2> 
+<form id="form"> 
+<input type="text" id="name" placeholder="Full Name" required> 
+<input type="email" id="email" placeholder="Email Address" required> 
+<input type="password" id="password" placeholder="Password" required> 
+<button type="submit">Register</button> 
+<p id="message"></p> 
+</form> 
+</div> 
+<script src="scripts.js"></script> 
+</body> 
+</html> 
+STYLE.CSS:- 
+* { 
+margin: 0; 
+padding: 0; 
+box-sizing: border-box; 
+font-family: Arial, sans-serif; 
+} 
+body { 
+display: flex; 
+justify-content: center; 
+align-items: center; 
+min-height: 100vh; 
+background-color: #f0f0f0; 
+} 
+.box { 
+background: #fff; 
+padding: 40px; 
+border-radius: 8px; 
+box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+width: 100%; 
+max-width: 400px; /* Limits max width for larger screens */ 
+} 
+h2 { 
+margin-bottom: 20px; 
+text-align: center; 
+color: #333; 
+} 
+#form input { 
+width: 100%; 
+padding: 12px; 
+margin-bottom: 15px; 
+border: 1px solid #ccc; 
+border-radius: 4px; 
+font-size: 16px; 
+} 
+#form input:focus { 
+outline: none; 
+border-color: #007bff; 
+} 
+#form button { 
+width: 100%; 
+padding: 12px; 
+border: none; 
+border-radius: 4px; 
+background-color: #007bff; 
+color: white; 
+font-size: 16px; 
+cursor: pointer; 
+transition: background-color 0.3s; 
+} 
+#form button:hover { 
+background-color: #0056b3; 
+} 
+#message { 
+margin-top: 15px; 
+text-align: center; 
+font-size: 14px; 
+color: green; /* Default color for success */ 
+} 
+SCRIPT.JS:- 
+document.getElementById("form").addEventListener("submit", function(e) {  
+e.preventDefault(); 
+let name = document.getElementById("name").value; 
+let email = document.getElementById("email").value; 
+let password = document.getElementById("password").value; 
+let msg = document.getElementById("msg"); 
+msg.style.color = "red"; 
+msg.innerText = "Registration successful"; 
+document.getElementById("form").reset(); 
+}); 
+2. Create login/signup with express/flask mongodb. 
+FOLDER STRUCTURE:- 
+flask-signup/ 
+├── app.py 
+├── requirements.txt 
+└── .env 
+└── templates/ 
+├── register.html 
+└── login.html 
+app.py:- 
+from flask import Flask, render_template, request, redirect, url_for, flash, session 
+from pymongo import MongoClient 
+from werkzeug.security import generate_password_hash, check_password_hash 
+from dotenv import load_dotenv 
+import os 
+load_dotenv()  # Optional if using .env for URI & secret 
+app = Flask(__name__) 
+app.secret_key = os.getenv("SECRET_KEY") or "your_secret_key" 
+# MongoDB Compass connection 
+# Replace <username>, <password>, <cluster-address>, <dbname> with your credentials 
+MONGO_URI = os.getenv("MONGO_URI") or "mongodb://localhost:27017/signup_demo" 
+client = MongoClient(MONGO_URI) 
+db = client.get_database()  # default database from URI or local 
+users_collection = db['users'] 
+# Home route 
+@app.route('/') 
+def home(): 
+if 'username' in session: 
+return redirect(url_for('dashboard')) 
+return redirect(url_for('login')) 
+# Registration 
+@app.route('/register', methods=['GET', 'POST']) 
+def register(): 
+if request.method == 'POST': 
+username = request.form['username'].strip() 
+password = request.form['password'].strip() 
+if not username or not password: 
+flash('All fields are required!', 'danger') 
+elif users_collection.find_one({'username': username}): 
+flash('Username already exists!', 'danger') 
+else: 
+hashed_password = generate_password_hash(password) 
+users_collection.insert_one({'username': username, 'password': hashed_password}) 
+flash('Registration successful! You can log in now.', 'success') 
+return redirect(url_for('login')) 
+return render_template('register.html') 
+# Login 
+@app.route('/login', methods=['GET', 'POST']) 
+def login(): 
+if request.method == 'POST': 
+username = request.form['username'].strip() 
+password = request.form['password'].strip() 
+user = users_collection.find_one({'username': username}) 
+if user and check_password_hash(user['password'], password): 
+session['username'] = username 
+flash('Login successful!', 'success') 
+return redirect(url_for('dashboard')) 
+else: 
+flash('Invalid username or password!', 'danger') 
+return render_template('login.html') 
+# Dashboard 
+@app.route('/dashboard') 
+def dashboard(): 
+if 'username' not in session: 
+flash('Please login first!', 'danger') 
+return redirect(url_for('login')) 
+return f"Welcome {session['username']}! This is your dashboard." 
+# Logout 
+@app.route('/logout') 
+def logout(): 
+session.pop('username', None) 
+flash('Logged out successfully.', 'success') 
+return redirect(url_for('login')) 
+if __name__ == "__main__": 
+app.run(debug=True) 
+Register.HTML:- 
+<!DOCTYPE html> 
+<html> 
+<head> 
+<title>Register</title> 
+<style> 
+.alert { padding: 10px; margin-bottom: 10px; } 
+.success { background-color: #d4edda; color: #155724; } 
+.danger { background-color: #f8d7da; color: #721c24; } 
+</style> 
+</head> 
+<body> 
+<h2>Register</h2> 
+{% with messages = get_flashed_messages(with_categories=true) %} 
+{% if messages %} 
+{% for category, message in messages %} 
+<div class="alert {{ category }}">{{ message }}</div> 
+{% endfor %} 
+{% endif %} 
+{% endwith %} 
+<form method="POST"> 
+<label>Username:</label><br> 
+<input type="text" name="username" required><br><br> 
+<label>Password:</label><br> 
+<input type="password" name="password" required><br><br> 
+<button type="submit">Register</button> 
+</form> 
+<p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p> 
+</body> 
+</html> 
+Login.html:- 
+<!DOCTYPE html> 
+<html> 
+<head> 
+<title>Login</title> 
+<style> 
+.alert { padding: 10px; margin-bottom: 10px; } 
+.success { background-color: #d4edda; color: #155724; } 
+.danger { background-color: #f8d7da; color: #721c24; } 
+</style> 
+</head> 
+<body> 
+<h2>Login</h2> 
+{% with messages = get_flashed_messages(with_categories=true) %} 
+{% if messages %} 
+{% for category, message in messages %} 
+<div class="alert {{ category }}">{{ message }}</div> 
+{% endfor %} 
+{% endif %} 
+{% endwith %} 
+<form method="POST"> 
+<label>Username:</label><br> 
+<input type="text" name="username" required><br><br> 
+<label>Password:</label><br> 
+<input type="password" name="password" required><br><br> 
+<button type="submit">Login</button> 
+</form> 
+<p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p> 
+</body> 
+</html> 
+3.Write a express code for AJAX&JSON. 
+Server.js:- 
+const express = require("express"); 
+const app = express(); 
+const path = require("path"); 
+// Middleware to parse JSON 
+app.use(express.json()); 
+// Serve static files (HTML, JS) 
+app.use(express.static("public")); 
+// GET API (Send JSON to client) 
+app.get("/api/user", (req, res) => { 
+res.json({ 
+name: "Gayathri", 
+age: 20, 
+course: "Web Development" 
+}); 
+}); 
+// POST API (Receive JSON from client) 
+app.post("/api/user", (req, res) => { 
+const userData = req.body; 
+res.json({ 
+message: "Data received successfully", 
+    receivedData: userData 
+  }); 
+}); 
+// Start server 
+app.listen(3000, () => { 
+  console.log("Server running at http://localhost:3000"); 
+}); 
+Script.js:- 
+function getUser() { 
+  fetch("/api/user") 
+    .then(response => response.json()) 
+    .then(data => { 
+      document.getElementById("output").innerHTML = 
+        `Name: ${data.name} <br> 
+         Age: ${data.age} <br> 
+         Course: ${data.course}`; 
+    }); 
+} 
+function sendUser() { 
+  const name = document.getElementById("name").value; 
+  const age = document.getElementById("age").value; 
+  fetch("/api/user", { 
+    method: "POST", 
+    headers: { 
+      "Content-Type": "application/json" 
+    }, 
+    body: JSON.stringify({ 
+      name: name, 
+      age: age 
+    }) 
+}) 
+.then(response => response.json()) 
+.then(data => { 
+alert(data.message); 
+console.log(data.receivedData); 
+}); 
+} 
+Index.html:- 
+<!DOCTYPE html> 
+<html> 
+<head> 
+<title>AJAX + JSON with Express</title> 
+</head> 
+<body> 
+<h2>AJAX and JSON using Express</h2> 
+<button onclick="getUser()">Get User Data</button> 
+<p id="output"></p> 
+<h3>Send Data to Server</h3> 
+<input type="text" id="name" placeholder="Enter name"> 
+<input type="number" id="age" placeholder="Enter age"> 
+<button onclick="sendUser()">Send Data</button> 
+<script src="script.js"></script> 
+</body> 
+</html> 
+4. Write a program to Train and save ML model Naive Bayes. 
+FOLDER STRUCTURE:- 
+Train naivebayes/ 
+├── app.py  
+├── model.pkl 
+└── templates/      
+└── index.html    
+Program Code: 
+app.py:- 
+from flask import Flask, render_template, request 
+import pandas as pd 
+from sklearn.feature_extraction.text import CountVectorizer 
+from sklearn.naive_bayes import MultinomialNB 
+from sklearn.pipeline import Pipeline 
+import joblib 
+import os 
+app = Flask(__name__) 
+MODEL_PATH = "model.pkl" 
+def train_and_save_model(): 
+data = { 
+"text": [ 
+"Congratulations!Win money now", 
+"Hello how are you", 
+"Limited offer claim prize", 
+"Recharge now" 
+"Meeting at 10am", 
+"Free gift available", 
+"Let's have lunch" 
+], 
+"label": [1, 0, 1, 0, 1, 0]  # 1=Spam, 0=Ham 
+} 
+df = pd.DataFrame(data) 
+model = Pipeline([ 
+("vectorizer", CountVectorizer()), 
+("classifier", MultinomialNB()) 
+]) 
+model.fit(df["text"], df["label"]) 
+joblib.dump(model, MODEL_PATH) 
+print("Naive Bayes model trained and saved.") 
+# Train model only if not exists 
+if not os.path.exists(MODEL_PATH): 
+train_and_save_model() 
+# Load trained model 
+model = joblib.load(MODEL_PATH) 
+@app.route("/", methods=["GET", "POST"]) 
+def index(): 
+prediction = "" 
+if request.method == "POST": 
+user_text = request.form["text"] 
+result = model.predict([user_text])[0] 
+prediction = "Spam" if result == 1 else "Not Spam" 
+return render_template("index.html", prediction=prediction) 
+if __name__ == "__main__": 
+app.run(debug=True) 
+index.html:- 
+<!DOCTYPE html> 
+<html> 
+<head> 
+<title>Naive Bayes Spam Classifier</title> 
+</head> 
+<body> 
+<h2>Naive Bayes Text Classification</h2> 
+<form method="POST"> 
+<textarea name="text" rows="4" cols="40" required></textarea><br><br> 
+<input type="submit" value="Predict"> 
+</form> 
+{% if prediction %} 
+<h3>Prediction: {{ prediction }}</h3> 
+{% endif %} 
+</body> 
+</html> 
